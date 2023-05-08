@@ -9,8 +9,10 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
+async-trait = "0.1.68"
 axum = "0.6.18"
 chrono = { version = "0.4.24", features = ["serde"] }
+http-body-util = "0.1.0-rc.2"
 hyper = { version = "0.14.26", features = ["client", "runtime"] }
 podman-api = { version = "0.10.0", features = ["vendored-ssl"] }
 serde = { version = "1.0.160", features = ["derive"] }
