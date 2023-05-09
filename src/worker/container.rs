@@ -39,12 +39,11 @@ pub(crate) struct Image {
 
 impl Display for Image {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}:{}",
-            self.name,
-            self.tag.unwrap_or("latest".to_owned())
-        )
+        if let Some(ref tag) = self.tag {
+            write!(f, "{}:{}", self.name, tag)
+        } else {
+            write!(f, "{}:latest", self.name)
+        }
     }
 }
 
@@ -57,6 +56,12 @@ impl From<String> for ContainerId {
     }
 }
 
+impl Display for ContainerId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[async_trait]
 pub(crate) trait Service {
     async fn create_container(&self, options: ContainerOptions) -> Result<ContainerId>;
@@ -64,6 +69,7 @@ pub(crate) trait Service {
     async fn create_volume(&self) -> Result<Volume>;
     async fn fetch_logs(&self, opts: FetchLogOptions) -> Result<String>;
     async fn pull_image(&self, img: Image) -> Result<()>;
+    async fn start_container(&self, id: ContainerId) -> Result<()>;
 }
 
 #[derive(Debug)]

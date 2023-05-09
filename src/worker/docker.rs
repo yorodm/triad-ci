@@ -7,35 +7,43 @@ use anyhow::Result;
 use async_trait::async_trait;
 use hyper::body::to_bytes;
 use hyper::{Body, Client, Method};
-use hyper::{Request, Response, Uri as HyperUri};
+use hyper::{Request, Response};
 use hyperlocal::{UnixClientExt, UnixConnector, Uri};
 use serde::{Deserialize, Serialize};
-use serde_json::{from_slice, json, Value};
+use serde_json::{json, Value};
 
 pub(crate) struct Docker {
-    socket: HyperUri,
+    socket_path: PathBuf,
     client: Client<UnixConnector, Body>,
 }
 
 impl Docker {
+    const VERSION: &'static str = "/v1.42/";
+
     fn new<P: AsRef<Path>>(socket_path: P) -> Docker {
         Docker {
-            socket: Uri::new(socket_path, "/").into(),
+            socket_path: socket_path.as_ref().to_path_buf(),
             client: Client::unix(),
         }
     }
 
-    async fn send_request<'a, S: Serialize>(
+    // TODO: move this into the trait
+    async fn send_request<'a, S: Serialize, T: AsRef<str>>(
         &self,
-        request: S,
+        path: T,
+        request: Option<S>,
         method: Method,
     ) -> Result<Response<Body>> {
-        let json = serde_json::to_string(&request)?;
-        let req = Request::builder()
-            .method(method)
-            .uri(&self.socket)
-            .body(Body::from(json))?;
-        Ok(self.client.request(req).await?)
+        let req = Request::builder().method(method).uri(Uri::new(
+            &self.socket_path,
+            &format!("{}/{}", Self::VERSION, path.as_ref()),
+        ));
+        if let Some(r) = request {
+            let json = serde_json::to_string(&r)?;
+            Ok(self.client.request(req.body(Body::from(json))?).await?)
+        } else {
+            Ok(self.client.request(req.body(Body::empty())?).await?)
+        }
     }
 }
 
@@ -68,23 +76,31 @@ struct HostConfig {
 impl Service for Docker {
     async fn create_container(&self, options: ContainerOptions) -> Result<ContainerId> {
         let bind = format!("{}:/app", options.volume.to_string());
-        let image = options.image.to_string();
         let request = CreateRequest {
             tty: true,
             labels: json!({
                 "triad-ci":""
             }),
             entrypoint: vec!["/bin/sh".to_owned(), "-c".to_owned()],
-            cmd: "echo \"$QUAD_SCRIPT\" | /bin/sh".to_owned(),
-            env: vec![format!("QUAD_SCRIPT={}", options.script)],
+            cmd: "echo \"$TRIAD_SCRIPT\" | /bin/sh".to_owned(),
+            env: vec![format!("TRIAD_SCRIPT={}", options.script)],
             working_dir: "/app".to_owned(),
             host_config: HostConfig { binds: vec![bind] },
             image: options.image.to_string(),
         };
         let response = self
-            .send_request::<CreateRequest>(request, Method::POST)
+            .send_request::<CreateRequest, _>("containers/create", Some(request), Method::POST)
             .await?;
-        todo!()
+        let create_response =
+            serde_json::from_slice::<CreateResponse>(&to_bytes(response.into_body()).await?)?;
+        Ok(create_response.id.into())
+    }
+
+    async fn start_container(&self, id: ContainerId) -> Result<()> {
+        let response = self
+            .send_request::<u8, _>(&format!("containers/start/{}", id), None, Method::POST)
+            .await?;
+        Ok(())
     }
 
     async fn container_status(&self) -> Result<ContainerStatus> {
