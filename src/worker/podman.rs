@@ -1,27 +1,27 @@
 use anyhow::Result;
+use async_trait::async_trait;
 
-use super::container::{Service, ContainerId, ContainerOptions, Volume, FetchLogOptions, Image};
+use super::container::{
+    ContainerId, ContainerOptions, ContainerStatus, FetchLogOptions, Image, Service, Volume,
+};
 
-pub (crate) struct Podman;
+pub(crate) struct Podman;
 
+#[async_trait]
 impl Service for Podman {
-    fn create_container(&self, options: ContainerOptions) -> Result<ContainerId> {
+    async fn create_container(&self, options: ContainerOptions) -> Result<ContainerId> {
         todo!()
     }
-
-    fn container_status(&self) {
+    async fn container_status(&self) -> Result<ContainerStatus> {
         todo!()
     }
-
-    fn create_volume(&self) -> Result<Volume> {
+    async fn create_volume(&self) -> Result<Volume> {
         todo!()
     }
-
-    fn fetch_logs(&self, opts: FetchLogOptions) -> Result<String> {
+    async fn fetch_logs(&self, opts: FetchLogOptions) -> Result<String> {
         todo!()
     }
-
-    fn pull_image(&self, img: Image) -> Result<()> {
+    async fn pull_image(&self, img: Image) -> Result<()> {
         todo!()
     }
 }

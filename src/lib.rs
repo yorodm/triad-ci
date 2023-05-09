@@ -6,14 +6,14 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Step {
     name: Option<String>,
-    command: String
+    command: String,
 }
 
 /// The result of executing a [`Step`]
 #[derive(Debug)]
 pub enum StepStatus {
     Failed,
-    Succeded
+    Succeded,
 }
 
 /// A set of [`Step`] with a single objective
@@ -30,7 +30,7 @@ pub enum JobStatus {
     Started,
     Running,
     Paused,
-    Failed
+    Failed,
 }
 
 /// A Build
@@ -38,7 +38,7 @@ pub enum JobStatus {
 pub struct Build {
     id: String,
     jobs: Vec<Job>,
-    commit: CommitInfo
+    commit: CommitInfo,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -47,13 +47,13 @@ pub enum BuildStatus {
     Started,
     Working,
     Failed,
-    Timeout
+    Timeout,
 }
 
-#[derive(Debug,Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct BuildUpdate {
     build_id: String,
-    status: BuildStatus
+    status: BuildStatus,
 }
 
 /// Identifies commit information.
@@ -64,7 +64,7 @@ pub struct CommitInfo {
     url: String,
     author: ShortUserInfo,
     committer: ShortUserInfo,
-    timestamp: String
+    timestamp: String,
 }
 
 /// Long user identification
@@ -75,7 +75,7 @@ pub struct UserInfo {
     full_name: String,
     email: String,
     avatar_url: String,
-    username: String
+    username: String,
 }
 
 /// Short user identification
@@ -83,7 +83,7 @@ pub struct UserInfo {
 pub struct ShortUserInfo {
     name: String,
     email: String,
-    username: String
+    username: String,
 }
 
 /// Identifies repository data.
@@ -106,7 +106,7 @@ pub struct RepositoryInfo {
     open_issues_count: u32,
     default_branch: String,
     created_at: String,
-    updated_at: String
+    updated_at: String,
 }
 
 /// Gitea commit webhook
@@ -120,5 +120,5 @@ pub struct WebHook {
     commits: Vec<CommitInfo>,
     repository: RepositoryInfo,
     pusher: UserInfo,
-    sender: UserInfo
+    sender: UserInfo,
 }

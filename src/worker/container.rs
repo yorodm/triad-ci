@@ -14,16 +14,16 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
-pub (crate) struct ContainerOptions {
-    pub (crate) image: Image,
-    pub (crate) script: String,
-    pub (crate) volume: Volume
+pub(crate) struct ContainerOptions {
+    pub(crate) image: Image,
+    pub(crate) script: String,
+    pub(crate) volume: Volume,
 }
 
-pub (crate) struct FetchLogOptions;
+pub(crate) struct FetchLogOptions;
 
 #[derive(Debug)]
-pub (crate) struct Volume(String);
+pub(crate) struct Volume(String);
 
 impl Display for Volume {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -32,31 +32,33 @@ impl Display for Volume {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub (crate) struct Image {
+pub(crate) struct Image {
     name: String,
-    tag: Option<String>
+    tag: Option<String>,
 }
 
 impl Display for Image {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}",self.name, self.tag.unwrap_or("latest".to_owned()))
+        write!(
+            f,
+            "{}:{}",
+            self.name,
+            self.tag.unwrap_or("latest".to_owned())
+        )
     }
 }
 
 #[derive(Debug)]
-pub (crate) struct ContainerId(String);
-
+pub(crate) struct ContainerId(String);
 
 impl From<String> for ContainerId {
-
     fn from(value: String) -> Self {
         Self(value)
     }
 }
 
 #[async_trait]
-pub (crate) trait Service {
-
+pub(crate) trait Service {
     async fn create_container(&self, options: ContainerOptions) -> Result<ContainerId>;
     async fn container_status(&self) -> Result<ContainerStatus>;
     async fn create_volume(&self) -> Result<Volume>;
@@ -65,8 +67,8 @@ pub (crate) trait Service {
 }
 
 #[derive(Debug)]
-pub (crate) enum ContainerStatus {
+pub(crate) enum ContainerStatus {
     Running,
     Exited,
-    Other(String)
+    Other(String),
 }

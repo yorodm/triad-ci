@@ -1,30 +1,31 @@
 use std::sync::Arc;
 
-use axum::{Router, Json, response::IntoResponse, extract::{State, Path}, routing::{get, post}};
+use axum::{
+    extract::{Path, State},
+    response::IntoResponse,
+    routing::{get, post},
+    Json, Router,
+};
 use tokio::sync::RwLock;
 
-use crate::{WebHook, Build};
-
-
+use crate::{Build, WebHook};
 
 type SharedState = Arc<RwLock<ServerState>>;
 
 #[derive(Debug, Default)]
 pub struct ServerState {
-    builds: Vec<Build>
+    builds: Vec<Build>,
 }
 
-pub (crate) fn server_router() -> Router {
+pub(crate) fn server_router() -> Router {
     Router::new()
         .route("/status", get(list_jobs))
-        .route("/jobs/:id",
-               post(take_job)
-               .put(update_job))
+        .route("/jobs/:id", post(take_job).put(update_job))
         .with_state(SharedState::default())
 }
 
 /// Entry point for the webhook
-async fn webhook(Json(data): Json<WebHook>, State(state) : State<SharedState>) -> impl IntoResponse {
+async fn webhook(Json(data): Json<WebHook>, State(state): State<SharedState>) -> impl IntoResponse {
     todo!()
 }
 
