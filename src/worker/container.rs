@@ -8,9 +8,10 @@ createContainer :: CreateContainerOptions -> IO ContainerId,
  */
 
 use std::fmt::Display;
-
+use std::error::Error;
 use anyhow::Result;
 use async_trait::async_trait;
+use hyper::StatusCode;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
@@ -35,6 +36,20 @@ impl Display for Volume {
 pub(crate) struct Image {
     name: String,
     tag: Option<String>,
+}
+
+impl Image {
+    pub (crate) fn name(&self) -> String {
+        self.name
+    }
+
+    pub (crate) fn tag(&self) -> String{
+        if let Some(t) = self.tag {
+            t
+        } else {
+            "latest".to_owned()
+        }
+    }
 }
 
 impl Display for Image {
@@ -77,4 +92,32 @@ pub(crate) enum ContainerStatus {
     Running,
     Exited,
     Other(String),
+}
+
+
+#[derive(Debug)]
+pub (crate) enum ContainerError{
+    BadParameter,
+    NotFound,
+    ServerError,
+    Forbidden,
+    Unknown
+}
+
+impl Display for ContainerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl From<StatusCode> for ContainerError {
+    fn from(value: StatusCode) -> Self {
+        todo!()
+    }
+}
+
+impl Error for ContainerError {}
+
+pub (crate) fn raise_for_status<R>(s: StatusCode) -> Result<R, ContainerError> {
+    todo!()
 }

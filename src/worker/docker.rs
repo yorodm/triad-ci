@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use super::container::{
-    ContainerId, ContainerOptions, ContainerStatus, FetchLogOptions, Image, Service, Volume,
+    ContainerId, ContainerOptions, ContainerStatus, FetchLogOptions, Image, Service, Volume, raise_for_status,
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -91,6 +91,7 @@ impl Service for Docker {
         let response = self
             .send_request::<CreateRequest, _>("containers/create", Some(request), Method::POST)
             .await?;
+        raise_for_status(response.status())?;
         let create_response =
             serde_json::from_slice::<CreateResponse>(&to_bytes(response.into_body()).await?)?;
         Ok(create_response.id.into())
@@ -98,7 +99,7 @@ impl Service for Docker {
 
     async fn start_container(&self, id: ContainerId) -> Result<()> {
         let response = self
-            .send_request::<u8, _>(&format!("containers/start/{}", id), None, Method::POST)
+            .send_request::<(), _>(&format!("containers/start/{}", id), None, Method::POST)
             .await?;
         Ok(())
     }
@@ -116,6 +117,9 @@ impl Service for Docker {
     }
 
     async fn pull_image(&self, img: Image) -> Result<()> {
-        todo!()
+        let query = format!("/images/create?tag={}&fromImage={}",
+                            img.name(), img.tag());
+        let resp = self.send_request::<(),_>(query, None, Method::POST).await?;
+        Ok(())
     }
 }
