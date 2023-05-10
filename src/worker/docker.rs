@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use super::container::{
-    ContainerId, ContainerOptions, ContainerStatus, FetchLogOptions, Image, Service, Volume, raise_for_status,
+    raise_for_status, ContainerError, ContainerId, ContainerOptions, ContainerStatus,
+    FetchLogOptions, Image, Result, Service, Volume,
 };
-use anyhow::Result;
 use async_trait::async_trait;
 use hyper::body::to_bytes;
 use hyper::{Body, Client, Method};
@@ -40,9 +40,21 @@ impl Docker {
         ));
         if let Some(r) = request {
             let json = serde_json::to_string(&r)?;
-            Ok(self.client.request(req.body(Body::from(json))?).await?)
+            Ok(self
+                .client
+                .request(
+                    req.body(Body::from(json))
+                        .map_err(|_| ContainerError::Transport)?,
+                )
+                .await?)
         } else {
-            Ok(self.client.request(req.body(Body::empty())?).await?)
+            Ok(self
+                .client
+                .request(
+                    req.body(Body::empty())
+                        .map_err(|_| ContainerError::Transport)?,
+                )
+                .await?)
         }
     }
 }
@@ -117,9 +129,11 @@ impl Service for Docker {
     }
 
     async fn pull_image(&self, img: Image) -> Result<()> {
-        let query = format!("/images/create?tag={}&fromImage={}",
-                            img.name(), img.tag());
-        let resp = self.send_request::<(),_>(query, None, Method::POST).await?;
+        let query = format!("/images/create?tag={}&fromImage={}", img.name(), img.tag());
+        let resp = self
+            .send_request::<(), _>(query, None, Method::POST)
+            .await?;
+        raise_for_status(resp.status())?;
         Ok(())
     }
 }

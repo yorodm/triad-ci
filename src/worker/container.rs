@@ -7,12 +7,11 @@ createContainer :: CreateContainerOptions -> IO ContainerId,
     pullImage :: Image -> IO ()
  */
 
-use std::fmt::Display;
-use std::error::Error;
-use anyhow::Result;
 use async_trait::async_trait;
 use hyper::StatusCode;
 use serde::{Deserialize, Serialize};
+use std::error::Error;
+use std::fmt::Display;
 
 #[derive(Debug)]
 pub(crate) struct ContainerOptions {
@@ -39,11 +38,11 @@ pub(crate) struct Image {
 }
 
 impl Image {
-    pub (crate) fn name(&self) -> String {
+    pub(crate) fn name(&self) -> String {
         self.name
     }
 
-    pub (crate) fn tag(&self) -> String{
+    pub(crate) fn tag(&self) -> String {
         if let Some(t) = self.tag {
             t
         } else {
@@ -77,6 +76,8 @@ impl Display for ContainerId {
     }
 }
 
+pub(crate) type Result<T> = std::result::Result<T, ContainerError>;
+
 #[async_trait]
 pub(crate) trait Service {
     async fn create_container(&self, options: ContainerOptions) -> Result<ContainerId>;
@@ -94,14 +95,15 @@ pub(crate) enum ContainerStatus {
     Other(String),
 }
 
-
 #[derive(Debug)]
-pub (crate) enum ContainerError{
+pub(crate) enum ContainerError {
     BadParameter,
+    BadResponse,
     NotFound,
     ServerError,
     Forbidden,
-    Unknown
+    Unknown,
+    Transport,
 }
 
 impl Display for ContainerError {
@@ -116,8 +118,21 @@ impl From<StatusCode> for ContainerError {
     }
 }
 
+// TODO:
+impl From<serde_json::Error> for ContainerError {
+    fn from(value: serde_json::Error) -> Self {
+        ContainerError::BadResponse
+    }
+}
+
+impl From<hyper::Error> for ContainerError {
+    fn from(value: hyper::Error) -> Self {
+        todo!()
+    }
+}
+
 impl Error for ContainerError {}
 
-pub (crate) fn raise_for_status<R>(s: StatusCode) -> Result<R, ContainerError> {
+pub(crate) fn raise_for_status<R>(s: StatusCode) -> Result<R> {
     todo!()
 }
